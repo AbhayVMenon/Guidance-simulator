@@ -1,4 +1,4 @@
-import numpy as np, os, matplotlib as plt, math as m
+import numpy as np, os, matplotlib.pyplot as plt, math as m
 
 os.system("cls")
 
@@ -91,6 +91,11 @@ def Aug_Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt):
 
 print(f"from APN: {Aug_Prop_Nav_Guidance(t0,t1,p0,p1, N, dt)}")
 print(f"from PN: {Prop_Nav_Guidance(t0,t1,p0,p1, N, dt)[0]}")
+
+
+
+#Main loop 
+
 
 
     
