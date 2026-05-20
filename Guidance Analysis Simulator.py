@@ -65,20 +65,32 @@ def Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt):
 
     Vc = np.dot(v_rel, unit_los2) # closing speed 
 
-
-    
     perp_los2 = np.array(([0, -1], [1, 0])) @ los2
 
     unit_perp_los2 = perp_los2 / np.linalg.norm(perp_los2)
 
     a_c = N * Vc * los_rate * unit_perp_los2
 
-    return a_c
+    return a_c, unit_perp_los2
+
+def Aug_Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt):
+
+    a_c_PN, unit_perp_los2 = Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt)
+
+    t_vi1 = ti1[2:4]
+    t_vi2 = ti2[2:4]
+
+    t_a = (t_vi2 - t_vi1)/dt
+
+    t_a_perp = np.dot(unit_perp_los2, t_a)  #component perp to LOS
+
+    a_c_Aug = a_c_PN + N/2 * t_a_perp
 
 
+    return a_c_Aug
 
-print(Prop_Nav_Guidance(t0,t1,p0,p1, N, dt))
-
+print(f"from APN: {Aug_Prop_Nav_Guidance(t0,t1,p0,p1, N, dt)}")
+print(f"from PN: {Prop_Nav_Guidance(t0,t1,p0,p1, N, dt)[0]}")
 
 
     
