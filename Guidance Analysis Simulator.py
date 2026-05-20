@@ -23,6 +23,8 @@ a = [0, -9.81] # m/s^2
 N = 3
 dt = 0.01
 
+
+# Guidance Laws
 def Pure_Pursuit_Guidance(ti, pi):
 
     p_ri = pi[0:2]          #P inital position
@@ -90,28 +92,42 @@ def Aug_Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt):
 
     return a_c_Aug
 
-def plot_straight_T_trajectory(ti1, ti2, dt, x_range):
+# Target Trajectories
+def straight_T_trajectory(x, x_start):
+    return np.zeros(len(x))
 
-    #straight line trajectory
+def sin_T_trajectory(x, x_start):
+    c = x_start
+    A = 5000
+    w = 0.002
+    return A * np.sin(w * (x - c))
+
+# plot coordinates
+def target_states_values(ti1, dt, x_range, trajectory):
+
     x_start = ti1[0]
-    x = np.arange(x_start, x_range + dt, 0.1)
-    
-    y = np.zeros(np.shape(x)[0])
+
+    x = np.arange(x_start, x_range + dt, dt)
+
+    y = trajectory(x, x_start)
+
+    return x, y
+
+def Main_loop(ti1, dt, x_range):
+
+    # T trajectory
+
+    x, y = target_states_values(ti1, dt, x_range, sin_T_trajectory)
 
     plt.plot(x, y, color = "red")
 
-    plt.show
+    plt.show()
 
 
-plot_straight_T_trajectory(t0,t1,dt,x_range)
+Main_loop(t0, dt, x_range)
 
-
-
-
-
-
-
-
+# print(f"x values: {Main_loop(t0, dt, x_range)[0]}")
+# print(f"y values: {Main_loop(t0, dt, x_range)[1]}")    
 
 
 
