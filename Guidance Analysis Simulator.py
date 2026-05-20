@@ -7,7 +7,7 @@ os.system("cls")
 dt = 0.1 # time step
 
 #target inital state vector 
-t0 = np.array([100, 0, 1000, 0]) # m
+t0 = np.array([1000, 0, 1000, 0]) # m
 t1 = t0 + np.array([(dt * t0[2]), 0, 0, 0]) # @t = 0.01
 
 #Pursuer inital state vector
@@ -103,31 +103,60 @@ def sin_T_trajectory(x, x_start):
     return A * np.sin(w * (x - c))
 
 # plot coordinates
-def target_states_values(ti1, dt, x_range, trajectory):
+def target_states_values(ti1, ti2, dt, x_range, trajectory):
 
-    x_start = ti1[0]
+    x_start = ti2[0]
 
-    x = np.arange(x_start, x_range + dt, dt)
+    x_pre = np.arange(x_start, x_range + dt, dt)
 
-    y = trajectory(x, x_start)
+    x = np.insert(x_pre, 0, ti1[0]) #prepending 1st state
 
-    return x, y
+    y_pre = trajectory(x_pre, x_start)
 
-def Main_loop(ti1, dt, x_range):
+    y = np.insert(y_pre, 0, ti1[1])
+
+    return x,y
+
+# def update_P_state_PP(Pure_Pursuit_Guidance, pi1, pi2, target_x, target_y):
+
+#     for j in range(len(target_x)):
+
+#         t_coords = [target_x[j], target_y[j]]
+
+    
+
+def Main_loop(ti1, ti2, pi1, pi2, dt, x_range):
 
     # T trajectory
 
-    x, y = target_states_values(ti1, dt, x_range, sin_T_trajectory)
+    t_x, t_y = target_states_values(ti1, ti2, dt, x_range, sin_T_trajectory)
 
-    plt.plot(x, y, color = "red")
+    plt.plot(t_x, t_y, color = "red")
 
     plt.show()
 
+    # P trajectory
 
-Main_loop(t0, dt, x_range)
+    for j in range(1, len(t_x)): #iterate through all values and assign a time value
 
-# print(f"x values: {Main_loop(t0, dt, x_range)[0]}")
-# print(f"y values: {Main_loop(t0, dt, x_range)[1]}")    
+        t_coords = [t_x[j], t_y[j]]
+
+
+
+
+
+
+
+    return t_x, t_y
+
+
+
+
+#print(Main_loop(t0, t1, dt, x_range))
+#print(target_states_values(t0, t1, dt, x_range, sin_T_trajectory))
+
+# print(f"x values: {Main_loop(t0, t1, dt, x_range)[0]}")
+# print(f"y values: {Main_loop(t0, t1, dt, x_range)[1]}")    
 
 
 
