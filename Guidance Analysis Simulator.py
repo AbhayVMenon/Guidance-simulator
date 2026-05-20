@@ -4,7 +4,7 @@ os.system("cls")
 
 #T = target, P = Pursuer
 
-dt = 0.01 # time step
+dt = 0.1 # time step
 
 #target inital state vector 
 t0 = np.array([100, 0, 1000, 0]) # m
@@ -15,7 +15,8 @@ p0 = np.array([0, 500, (1.1 * t0[2]), 0])
 p1 = p0 + np.array([(dt * 1.1 * t0[2]), 0, 0, 0]) # @t = 0.01
 
 # np.random.randint(-1000,1000)
-
+x_range = 10000
+x = np.arange(0,x_range,0.1)   #range of sim window
 #global constants
 g = 9.81
 a = [0, -9.81] # m/s^2
@@ -89,12 +90,43 @@ def Aug_Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt):
 
     return a_c_Aug
 
-print(f"from APN: {Aug_Prop_Nav_Guidance(t0,t1,p0,p1, N, dt)}")
-print(f"from PN: {Prop_Nav_Guidance(t0,t1,p0,p1, N, dt)[0]}")
+def plot_straight_T_trajectory(ti1, ti2, dt, x_range):
+
+    #straight line trajectory
+    x_start = ti1[0]
+    x = np.arange(x_start, x_range + dt, 0.1)
+    
+    y = np.zeros(np.shape(x)[0])
+
+    plt.plot(x, y, color = "red")
+
+    plt.show
+
+
+plot_straight_T_trajectory(t0,t1,dt,x_range)
 
 
 
-#Main loop 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#print(f"from APN: {Aug_Prop_Nav_Guidance(t0,t1,p0,p1, N, dt)}")
+#print(f"from PN: {Prop_Nav_Guidance(t0,t1,p0,p1, N, dt)[0]}")
+
+
+
+
 
 
 
