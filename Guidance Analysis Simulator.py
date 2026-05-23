@@ -4,14 +4,15 @@ os.system("cls")
 
 #T = target, P = Pursuer
 
-dt = 0.1 # time step
+dt = 0.05 # time step
+speed_multipier = 2.5 # How much faster P is than T
 
 #target inital state vector 
 t0 = np.array([1000, 0, 1000, 0]) # m
 t1 = t0 + np.array([(dt * t0[2]), 0, 0, 0]) # @t = 0.01
 
 #Pursuer inital state vector
-p0 = np.array([0, 500, (1.1 * t0[2]), 0])
+p0 = np.array([0, 500, (speed_multipier * t0[2]), 0])
 p1 = p0 + np.array([(dt * 1.1 * t0[2]), 0, 0, 0]) # @t = 0.01
 
 # np.random.randint(-1000,1000)
@@ -21,7 +22,7 @@ x = np.arange(0,x_range,0.1)   #range of sim window
 g = 9.81
 a = [0, -9.81] # m/s^2
 N = 3
-dt = 0.01
+
 
 
 # Guidance Laws
@@ -34,11 +35,11 @@ def Pure_Pursuit_Guidance(ti2, pi2):
 
     mag_los = np.linalg.norm(los)
 
-    if mag_los < 3:         #size of missile
-        unit_los = np.zeros(2)
+    # if mag_los < 3:         #size of missile
+    #     unit_los = np.zeros(2)
     
-    else:
-        unit_los = los / mag_los
+    # else:
+    unit_los = los / mag_los
 
     return unit_los
 
@@ -98,8 +99,8 @@ def straight_T_trajectory(x, x_start):
 
 def sin_T_trajectory(x, x_start):
     c = x_start
-    A = 5000
-    w = 0.002
+    A = 2300
+    w = 0.0014
     return A * np.sin(w * (x - c))
 
 # plot coordinates
@@ -107,7 +108,7 @@ def target_states_values(ti1, ti2, dt, x_range, trajectory):
 
     x_start = ti2[0]
 
-    x_pre = np.arange(x_start, x_range + dt, dt)
+    x_pre = np.arange(x_start, x_range + dt * ti2[2], dt * ti2[2])
 
     x = np.insert(x_pre, 0, ti1[0]) #prepending 1st state
 
@@ -147,15 +148,11 @@ def update_state_APN(Aug_Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt):
 
 def Main_loop(ti1, ti2, pi1, pi2, dt, x_range):
 
-    Gl = "PP"
+    Gl = "PP"   # Define what guidance law I wanna use
 
     # T trajectory
 
-    t_x, t_y = target_states_values(ti1, ti2, dt, x_range, sin_T_trajectory)
-
-    plt.plot(t_x, t_y, color = "red")
-
-    plt.show()
+    [t_x, t_y] = target_states_values(ti1, ti2, dt, x_range, sin_T_trajectory)
 
     # P trajectory
 
@@ -175,12 +172,12 @@ def Main_loop(ti1, ti2, pi1, pi2, dt, x_range):
     p_vx = np.insert(p_x_post, 0, p_vx_pre) # velocity values
     p_vy = np.insert(p_y_post, 0, p_vy_pre)
 
-    # Loop to find P coords based on T place
+    # # Loop to find P coords based on T place
 
-    for k in range(1, len(t_x - 1)): #iterate through all values and assign a time value
+    for k in range(1, len(t_x) - 1): #iterate through all values and assign a time value
 
-        t_previous_coords = np.array([t_x[k-1], t_y[k-1]])
         t_current_coords = np.array([t_x[k], t_y[k]])
+        p_current_state = np.array([p_x[k], p_y[k], p_vx[k], p_vy[k]])
 
         # p_previous_coords = np.array([p_x[k-1], p_y[k-1]])
         # p_current_coords = np.array([p_x[k], p_y[k]])
@@ -188,32 +185,47 @@ def Main_loop(ti1, ti2, pi1, pi2, dt, x_range):
         # p_previous_velocity = np.array([p_vx[k-1], p_vy[k-1]])
         # p_current_velocity = np.array([p_vx[k], p_vy[k]])
 
-        p_previous_state = np.array([p_x[k-1], p_y[k-1], p_vx[k-1], p_vy[k-1]])
-        p_current_state = np.array([p_x[k], p_y[k], p_vx[k], p_vy[k]])
-
         if Gl == "PP":
-            [p_x[k+1], p_y[k+1]] = update_state_PP(Pure_Pursuit_Guidance, p_current_state, t_current_coords, dt)
+            p_x[k+1] = np.array(update_state_PP(Pure_Pursuit_Guidance, p_current_state, t_current_coords, dt)[0][0])
+            p_y[k+1] = np.array(update_state_PP(Pure_Pursuit_Guidance, p_current_state, t_current_coords, dt)[0][1])
+            p_vx[k+1] = np.array(update_state_PP(Pure_Pursuit_Guidance, p_current_state, t_current_coords, dt)[1][0])
+            p_vy[k+1] = np.array(update_state_PP(Pure_Pursuit_Guidance, p_current_state, t_current_coords, dt)[1][1])
 
-        elif Gl == "PN":
-            [p_x[k+1], p_y[k+1]] =update_state_PN()
+        # calculate miss distance
+
+        distance_between = m.sqrt((p_x[k] - t_x[k])**2 + (p_y[k] - t_y[k])**2)
+
+        if distance_between < 2:
+            k_intercept = k
+            break
+    
+
+    plt.plot(t_x[0:k-1], t_y[0:k-1], color = "red")
+    plt.plot(p_x[0:k], p_y[0:k], color = "blue")
+
+    plt.show()
+
+    max_k = len(t_x) - 1
+
+    print(max_k)
+    print(k)
+
+        # else:
+        #     t_previous_coords = np.array([t_x[k-1], t_y[k-1]])
+        #     p_previous_state = np.array([p_x[k-1], p_y[k-1], p_vx[k-1], p_vy[k-1]])
+
+        #     if Gl == 'PN':
+        #         [p_x[k+1], p_y[k+1]] = update_state_PN(Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt)
+
+        #     if Gl == 'APN': 
+        #         [p_x[k+1], p_y[k+1]] = update_state_APN(Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt)
 
         #[p_x[k+1], p_y[k+1]] = p_new_coords
 
+Main_loop(t0, t1, p0, p1, dt, x_range)
 
-
-
-
-
-
-
-
-    return t_x, t_y
-
-
-
-
-#print(Main_loop(t0, t1, dt, x_range))
-print(update_state_PP(Pure_Pursuit_Guidance, p1, t1, dt))
+#print (f"P x values{Main_loop(t0, t1, p0, p1, dt, x_range)[0]}")
+#print (f"P y values{Main_loop(t0, t1, p0, p1, dt, x_range)[1]}")
 
 # print(f"x values: {Main_loop(t0, t1, dt, x_range)[0]}")
 # print(f"y values: {Main_loop(t0, t1, dt, x_range)[1]}")    
