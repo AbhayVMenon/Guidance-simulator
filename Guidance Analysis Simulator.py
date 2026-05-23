@@ -25,10 +25,10 @@ dt = 0.01
 
 
 # Guidance Laws
-def Pure_Pursuit_Guidance(ti, pi):
+def Pure_Pursuit_Guidance(ti2, pi2):
 
-    p_ri = pi[0:2]          #P inital position
-    t_ri = ti[0:2]          #T inital position
+    p_ri = pi2[0:2]          #P inital position
+    t_ri = ti2[0:2]          #T inital position
 
     los = t_ri - p_ri       #vector between P & T
 
@@ -117,15 +117,37 @@ def target_states_values(ti1, ti2, dt, x_range, trajectory):
 
     return x,y
 
-# def update_P_state_PP(Pure_Pursuit_Guidance, pi1, pi2, target_x, target_y):
+def update_state_PP(Pure_Pursuit_Guidance, pi2, ti2, dt):
 
-#     for j in range(len(target_x)):
+    p_current_r = pi2[0:2]    #current position of P
+    t_current_r = ti2[0:2]    #current position of T
 
-#         t_coords = [target_x[j], target_y[j]]
+    p_current_v = pi2[2:4]    #current velocity of P
 
-    
+    p_v_mag = np.linalg.norm(p_current_v)
+
+    new_direction = Pure_Pursuit_Guidance(t_current_r, p_current_r)
+
+    p_velocity_new = p_v_mag * new_direction  # amount in x & y that P needs to move
+
+    p_r_new = p_current_r + p_velocity_new * dt          # new coordinates of P
+
+    return [p_r_new, p_velocity_new]
+
+def update_state_PN(Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt): 
+    p_r_new = 0
+    p_velocity_new = 0 
+    return [p_r_new, p_velocity_new]
+
+def update_state_APN(Aug_Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt): 
+    p_r_new = 0
+    p_velocity_new = 0 
+    return [p_r_new, p_velocity_new]
+
 
 def Main_loop(ti1, ti2, pi1, pi2, dt, x_range):
+
+    Gl = "PP"
 
     # T trajectory
 
@@ -137,9 +159,47 @@ def Main_loop(ti1, ti2, pi1, pi2, dt, x_range):
 
     # P trajectory
 
-    for j in range(1, len(t_x)): #iterate through all values and assign a time value
+    # initalize P x & y values
+    p_x_pre = np.array([pi1[0], pi2[0]])
+    p_y_pre = np.array([pi1[1], pi2[1]])
 
-        t_coords = [t_x[j], t_y[j]]
+    p_vx_pre = np.array(([pi1[2], pi2[2]]))
+    p_vy_pre = np.array(([pi1[3], pi2[3]]))
+
+    p_x_post = np.zeros(len(t_x)-2) 
+    p_y_post = np.zeros(len(t_x)-2)
+
+    p_x = np.insert(p_x_post, 0, p_x_pre)   # position values
+    p_y = np.insert(p_y_post, 0, p_y_pre)
+
+    p_vx = np.insert(p_x_post, 0, p_vx_pre) # velocity values
+    p_vy = np.insert(p_y_post, 0, p_vy_pre)
+
+    # Loop to find P coords based on T place
+
+    for k in range(1, len(t_x - 1)): #iterate through all values and assign a time value
+
+        t_previous_coords = np.array([t_x[k-1], t_y[k-1]])
+        t_current_coords = np.array([t_x[k], t_y[k]])
+
+        # p_previous_coords = np.array([p_x[k-1], p_y[k-1]])
+        # p_current_coords = np.array([p_x[k], p_y[k]])
+
+        # p_previous_velocity = np.array([p_vx[k-1], p_vy[k-1]])
+        # p_current_velocity = np.array([p_vx[k], p_vy[k]])
+
+        p_previous_state = np.array([p_x[k-1], p_y[k-1], p_vx[k-1], p_vy[k-1]])
+        p_current_state = np.array([p_x[k], p_y[k], p_vx[k], p_vy[k]])
+
+        if Gl == "PP":
+            [p_x[k+1], p_y[k+1]] = update_state_PP(Pure_Pursuit_Guidance, p_current_state, t_current_coords, dt)
+
+        elif Gl == "PN":
+            [p_x[k+1], p_y[k+1]] =update_state_PN()
+
+        #[p_x[k+1], p_y[k+1]] = p_new_coords
+
+
 
 
 
@@ -153,18 +213,10 @@ def Main_loop(ti1, ti2, pi1, pi2, dt, x_range):
 
 
 #print(Main_loop(t0, t1, dt, x_range))
-#print(target_states_values(t0, t1, dt, x_range, sin_T_trajectory))
+print(update_state_PP(Pure_Pursuit_Guidance, p1, t1, dt))
 
 # print(f"x values: {Main_loop(t0, t1, dt, x_range)[0]}")
 # print(f"y values: {Main_loop(t0, t1, dt, x_range)[1]}")    
-
-
-
-
-
-
-
-
 
 #print(f"from APN: {Aug_Prop_Nav_Guidance(t0,t1,p0,p1, N, dt)}")
 #print(f"from PN: {Prop_Nav_Guidance(t0,t1,p0,p1, N, dt)[0]}")
