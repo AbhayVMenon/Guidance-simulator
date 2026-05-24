@@ -23,8 +23,6 @@ g = 9.81
 a = [0, -9.81] # m/s^2
 N = 3
 
-
-
 # Guidance Laws
 def Pure_Pursuit_Guidance(ti2, pi2):
 
@@ -99,8 +97,8 @@ def straight_T_trajectory(x, x_start):
 
 def sin_T_trajectory(x, x_start):
     c = x_start
-    A = 2300
-    w = 0.0014
+    A = 1000
+    w = 0.001
     return A * np.sin(w * (x - c))
 
 # plot coordinates
@@ -136,6 +134,9 @@ def update_state_PP(Pure_Pursuit_Guidance, pi2, ti2, dt):
     return [p_r_new, p_velocity_new]
 
 def update_state_PN(Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt): 
+
+
+
     p_r_new = 0
     p_velocity_new = 0 
     return [p_r_new, p_velocity_new]
@@ -191,36 +192,35 @@ def Main_loop(ti1, ti2, pi1, pi2, dt, x_range):
             p_vx[k+1] = np.array(update_state_PP(Pure_Pursuit_Guidance, p_current_state, t_current_coords, dt)[1][0])
             p_vy[k+1] = np.array(update_state_PP(Pure_Pursuit_Guidance, p_current_state, t_current_coords, dt)[1][1])
 
-        # calculate miss distance
+        else:
+            t_previous_coords = np.array([t_x[k-1], t_y[k-1]])
+            p_previous_state = np.array([p_x [k-1], p_y[k-1], p_vx[k-1], p_vy[k-1]])
 
+            if Gl == 'PN':
+                [p_x[k+1], p_y[k+1]] = update_state_PN(Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt)
+
+            if Gl == 'APN': 
+                [p_x[k+1], p_y[k+1]] = update_state_APN(Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt)
+
+        #[p_x[k+1], p_y[k+1]] = p_new_coords        
         distance_between = m.sqrt((p_x[k] - t_x[k])**2 + (p_y[k] - t_y[k])**2)
 
-        if distance_between < 2:
+        if distance_between < 3:
             k_intercept = k
             break
     
 
     plt.plot(t_x[0:k-1], t_y[0:k-1], color = "red")
     plt.plot(p_x[0:k], p_y[0:k], color = "blue")
+    plt.pause(0.001)
 
     plt.show()
 
     max_k = len(t_x) - 1
 
     print(max_k)
-    print(k)
+    print(k+1)
 
-        # else:
-        #     t_previous_coords = np.array([t_x[k-1], t_y[k-1]])
-        #     p_previous_state = np.array([p_x[k-1], p_y[k-1], p_vx[k-1], p_vy[k-1]])
-
-        #     if Gl == 'PN':
-        #         [p_x[k+1], p_y[k+1]] = update_state_PN(Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt)
-
-        #     if Gl == 'APN': 
-        #         [p_x[k+1], p_y[k+1]] = update_state_APN(Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt)
-
-        #[p_x[k+1], p_y[k+1]] = p_new_coords
 
 Main_loop(t0, t1, p0, p1, dt, x_range)
 
@@ -232,39 +232,3 @@ Main_loop(t0, t1, p0, p1, dt, x_range)
 
 #print(f"from APN: {Aug_Prop_Nav_Guidance(t0,t1,p0,p1, N, dt)}")
 #print(f"from PN: {Prop_Nav_Guidance(t0,t1,p0,p1, N, dt)[0]}")
-
-
-
-
-
-
-
-    
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
