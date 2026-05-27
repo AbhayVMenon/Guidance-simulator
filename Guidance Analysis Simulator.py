@@ -98,20 +98,18 @@ def Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt):
 
     a_c = N * Vc * los_rate * unit_perp_los2
 
-    print(f"Vc = {Vc}, los_rate = {los_rate}")
+    #print(f"Vc = {Vc}, los_rate = {los_rate}")
 
     #print(f"los_rate={los_rate:.4f}, Vc={Vc:.4f}, unit_perp={unit_perp_los2}")
 
     return a_c, unit_perp_los2
 
-def update_state_PN(Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt): 
+def ac_into_velocity_and_position(pi2, dt, a_c):
 
     p_current_r = pi2[0:2]
 
     p_current_v = pi2[2:4]
     
-    a_c = Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt)[0]
-
     p_velocity_new_raw = p_current_v + a_c * dt
 
     unit_p_velocity_new = p_velocity_new_raw / np.linalg.norm(p_velocity_new_raw)
@@ -120,11 +118,18 @@ def update_state_PN(Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt):
 
     p_r_new = p_current_r + p_velocity_new * dt
 
+    return [p_r_new, p_velocity_new]
+    
+
+def update_state_PN(Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt): 
+
+    a_c = Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt)[0]
+
     #print(f"k, a_c = {a_c}")
 
     #print(np.linalg.norm(p_velocity_new))
     
-    return [p_r_new, p_velocity_new] 
+    return ac_into_velocity_and_position(pi2, dt, a_c)
 
 
 def Aug_Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt):
@@ -143,9 +148,10 @@ def Aug_Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt):
     return a_c_Aug
 
 def update_state_APN(Aug_Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt): 
-    p_r_new = 0
-    p_velocity_new = 0 
-    return [p_r_new, p_velocity_new]
+
+    a_c_Aug = Aug_Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt)
+
+    return ac_into_velocity_and_position(pi2, dt, a_c_Aug)
 
 # Target Trajectories
 def get_velocity(t_x, t_y, dt, target_velocity_mag): 
@@ -200,7 +206,7 @@ def target_states_values(ti1, ti2, dt, x_range, trajectory):
 
 def Main_loop(ti1, ti2, pi1, pi2, dt, x_range):
 
-    Gl = "PN"   # Define what guidance law I wanna use
+    Gl = "APN"   # Define what guidance law I wanna use
 
     # T trajectory
 
@@ -250,7 +256,7 @@ def Main_loop(ti1, ti2, pi1, pi2, dt, x_range):
 
             
             if Gl == 'APN': 
-                ((p_x[k+1], p_y[k+1]), (p_vx[k+1], p_vy[k+1])) = update_state_APN(Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt)
+                ((p_x[k+1], p_y[k+1]), (p_vx[k+1], p_vy[k+1])) = np.array(update_state_APN(Aug_Prop_Nav_Guidance,t_previous_coords, t_current_coords, p_previous_state, p_current_state, N, dt))
 
         #[p_x[k+1], p_y[k+1]] = p_new_coords        
         distance_between = np.sqrt((p_x[k] - t_x[k])**2 + (p_y[k] - t_y[k])**2)
@@ -275,6 +281,8 @@ def Main_loop(ti1, ti2, pi1, pi2, dt, x_range):
 
     # print(max_k)
     # print(k + 1)
+
+    print(t_x[k-1])
 
 Main_loop(t0, t1, p0, p1, dt, x_range)
 
