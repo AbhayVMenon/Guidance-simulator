@@ -1,4 +1,4 @@
-import numpy as np, os, matplotlib.pyplot as plt, math as m
+import numpy as np, os, matplotlib.pyplot as plt, math as m, mpl_toolkits.mplot3d as Axes3D
 
 os.system("cls")
 
@@ -9,12 +9,12 @@ speed_multipier = 1.44 # How much faster P is than T
 target_velocity_mag = 1000
 
 #target inital state vector 
-t0 = np.array([1000, 0, target_velocity_mag, 0]) # m
-t1 = t0 + np.array([(dt * t0[2]), 0, 0, 0]) # @t = 0.01
+t0 = np.array([1000, 0, 0, target_velocity_mag, 0, 0]) # m
+t1 = t0 + np.array([(dt * t0[3]), 0, 0, 0, 0, 0]) # @t = 0.01
 
 #Pursuer inital state vector
-p0 = np.array([0, 500, (speed_multipier * t0[2]), 0])
-p1 = p0 + np.array([(dt * speed_multipier * t0[2]), 0, 0, 0]) # @t = 0.01
+p0 = np.array([0, 500, 0, (speed_multipier * t0[3]), 0, 0])
+p1 = p0 + np.array([(dt * speed_multipier * t0[3]), 0, 0, 0, 0, 0]) # @t = 0.01
 
 # np.random.randint(-1000,1000)
 x_range = 20000
@@ -22,14 +22,14 @@ x = np.arange(0,x_range,0.1)   #range of sim window
 
 #global constants
 g = 9.81
-a = [0, -9.81] # m/s^2
+a = [0, -g] # m/s^2
 N = 3
 
 # Guidance Laws
 def Pure_Pursuit_Guidance(ti2, pi2):
 
-    p_ri = pi2[0:2]          #P inital position
-    t_ri = ti2[0:2]          #T inital position
+    p_ri = pi2[0:3]          #P inital position
+    t_ri = ti2[0:3]          #T inital position
 
     los = t_ri - p_ri       #vector between P & T
 
@@ -46,14 +46,14 @@ def Pure_Pursuit_Guidance(ti2, pi2):
 def Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt):
 
     #LOS Rate
-    t_ri1 = ti1[0:2]
-    t_ri2 = ti2[0:2]  #T inital positions 
+    t_ri1 = ti1[0:3]
+    t_ri2 = ti2[0:3]  #T inital positions 
 
-    p_ri1 = pi1[0:2]
-    p_ri2 = pi2[0:2]  #P inital positions
+    p_ri1 = pi1[0:3]
+    p_ri2 = pi2[0:3]  #P inital positions
 
-    t_vi2 = ti2[2:4]
-    p_vi2 = pi2[2:4]  #P inital velocities 
+    t_vi2 = ti2[3:6]
+    p_vi2 = pi2[3:6]  #P inital velocities 
 
     los1 = t_ri1 - p_ri1
     los2 = t_ri2 - p_ri2
@@ -69,34 +69,36 @@ def Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt):
     #closing rate 
     v_rel = p_vi2 - t_vi2
 
-    los_cross_vrel = np.cross(np.append(los2, 0), np.append(v_rel, 0))[2]
+    los_cross_vrel = np.cross(los2, v_rel)
 
     los_rate = -los_cross_vrel / np.linalg.norm(los2)**2
 
     Vc = np.dot(v_rel, unit_los2) # closing speed 
 
-    perp_los2 = np.array(([0, -1], [1, 0])) @ los2
+    perp_los2 = np.cross(los_rate, unit_los2)
+
+    # perp_los2 = np.array(([0, -1], [1, 0])) @ los2
 
     unit_perp_los2 = perp_los2 / np.linalg.norm(perp_los2)
 
-    a_c = N * Vc * los_rate * unit_perp_los2
+    a_c = N * Vc * perp_los2
 
     #print(f"Vc = {Vc}, los_rate = {los_rate}")
 
     #print(f"los_rate={los_rate:.4f}, Vc={Vc:.4f}, unit_perp={unit_perp_los2}")
 
-    return a_c, unit_perp_los2
+    return a_c, unit_los2
     
 def Aug_Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt):
 
-    a_c_PN, unit_perp_los2 = Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt)
+    a_c_PN, unit_los2 = Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt)
 
-    t_vi1 = ti1[2:4]
-    t_vi2 = ti2[2:4]
+    t_vi1 = ti1[3:6]
+    t_vi2 = ti2[3:6]
 
     t_a = (t_vi2 - t_vi1)/dt
 
-    t_a_perp = np.dot(unit_perp_los2, t_a)  #component perp to LOS
+    t_a_perp = t_a - (np.dot(t_a, unit_los2) * unit_los2)  #component perp to LOS w/o component parallel to LOS
 
     a_c_Aug = a_c_PN + N/2 * t_a_perp
 
@@ -104,9 +106,9 @@ def Aug_Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt):
 
 def ac_into_velocity_and_position(pi2, dt, a_c):
 
-    p_current_r = pi2[0:2]
+    p_current_r = pi2[0:3]
 
-    p_current_v = pi2[2:4]
+    p_current_v = pi2[3:6]
     
     p_velocity_new_raw = p_current_v + a_c * dt
 
@@ -119,32 +121,52 @@ def ac_into_velocity_and_position(pi2, dt, a_c):
     return [p_r_new, p_velocity_new]
 
 # Target Trajectories
-def get_velocity(t_x, t_y, dt, target_velocity_mag): 
+def get_velocity(t_x, t_y, t_z, dt, target_velocity_mag):
 
-    t_v_raw = np.array([np.gradient(t_x, dt), np.gradient(t_y, dt)])
+    t_v_raw = np.array([np.gradient(t_x, dt), np.gradient(t_y, dt), np.gradient(t_z, dt)])
 
-    unit_t_v = t_v_raw / (np.sqrt(t_v_raw[0]**2 + t_v_raw[1]**2))
+    unit_t_v = t_v_raw / np.linalg.norm(t_v_raw, axis = 0)
 
-    (t_vx, t_vy) = target_velocity_mag * unit_t_v
+    (t_vx, t_vy, t_vz) = target_velocity_mag * unit_t_v
 
-    return t_vx, t_vy
+    return t_vx, t_vy, t_vz
 
-def straight_T_trajectory(x, x_start):
+
+#2D trajectories
+def Straight(x, x_start):
     t_y = np.zeros(len(x))
-    t_vx, t_vy = get_velocity(x, t_y, dt, target_velocity_mag)
+    t_z = np.zeros(len(x))
+    t_vx, t_vy, t_vz = get_velocity(x, t_y, t_z, dt, target_velocity_mag)
 
-    return t_y, t_vx, t_vy
+    return t_y, t_z, t_vx, t_vy, t_vz
 
-def sin_T_trajectory(x, x_start):
+def Sinusodial(x, x_start):
 
-    c = x_start
     A = 1000
     w = 0.001
 
-    t_y = A * np.sin(w * (x - c))
-    t_vx, t_vy = get_velocity(x, t_y, dt, target_velocity_mag)
+    t_y = A * np.sin(w * (x - x_start))
+    t_z = np.zeros(len(x - x_start))
+    t_vx, t_vy, t_vz = get_velocity(x, t_y, t_z, dt, target_velocity_mag)
 
-    return t_y, t_vx, t_vy
+    return t_y, t_z, t_vx, t_vy, t_vz
+
+
+#3D trajectories
+def Helix(x, x_start):
+
+    A = 1
+    L = 1000
+
+    t_y = A * np.sin(2 * np.pi / L * (x - x_start))
+    t_z = A * np.cos(2 * np.pi / L * (x - x_start))
+
+    t_vx, t_vy, t_vz = get_velocity(x, t_y, t_z, dt, target_velocity_mag)
+
+    return t_y, t_z, t_vx, t_vy, t_vz
+
+
+
 
 # plot coordinates
 def target_states_values(ti1, ti2, dt, x_range, trajectory):
@@ -206,7 +228,7 @@ def Main_loop(ti1, ti2, pi1, pi2, dt, x_range):
 
     # T trajectory
 
-    (t_x, t_y, t_vx, t_vy) = target_states_values(ti1, ti2, dt, x_range, sin_T_trajectory)
+    (t_x, t_y, t_vx, t_vy) = target_states_values(ti1, ti2, dt, x_range, Straight)
 
     # P trajectory
 
