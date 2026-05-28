@@ -14,11 +14,12 @@ t1 = t0 + np.array([(dt * t0[2]), 0, 0, 0]) # @t = 0.01
 
 #Pursuer inital state vector
 p0 = np.array([0, 500, (speed_multipier * t0[2]), 0])
-p1 = p0 + np.array([(dt * 1.1 * t0[2]), 0, 0, 0]) # @t = 0.01
+p1 = p0 + np.array([(dt * speed_multipier * t0[2]), 0, 0, 0]) # @t = 0.01
 
 # np.random.randint(-1000,1000)
 x_range = 20000
 x = np.arange(0,x_range,0.1)   #range of sim window
+
 #global constants
 g = 9.81
 a = [0, -9.81] # m/s^2
@@ -41,24 +42,6 @@ def Pure_Pursuit_Guidance(ti2, pi2):
     unit_los = los / mag_los
 
     return unit_los
-
-def update_state_PP(Pure_Pursuit_Guidance, pi2, ti2, dt):
-
-    p_current_r = pi2[0:2]    #current position of P
-    t_current_r = ti2[0:2]    #current position of T
-
-    p_current_v = pi2[2:4]    #current velocity of P
-
-    p_v_mag = np.linalg.norm(p_current_v)
-
-    new_direction = Pure_Pursuit_Guidance(t_current_r, p_current_r)
-
-    p_velocity_new = p_v_mag * new_direction  # amount in x & y that P needs to move
-
-    p_r_new = p_current_r + p_velocity_new * dt          # new coordinates of P
-
-    return [p_r_new, p_velocity_new]
-
 
 def Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt):
 
@@ -103,6 +86,21 @@ def Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt):
     #print(f"los_rate={los_rate:.4f}, Vc={Vc:.4f}, unit_perp={unit_perp_los2}")
 
     return a_c, unit_perp_los2
+    
+def Aug_Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt):
+
+    a_c_PN, unit_perp_los2 = Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt)
+
+    t_vi1 = ti1[2:4]
+    t_vi2 = ti2[2:4]
+
+    t_a = (t_vi2 - t_vi1)/dt
+
+    t_a_perp = np.dot(unit_perp_los2, t_a)  #component perp to LOS
+
+    a_c_Aug = a_c_PN + N/2 * t_a_perp
+
+    return a_c_Aug
 
 def ac_into_velocity_and_position(pi2, dt, a_c):
 
@@ -119,39 +117,6 @@ def ac_into_velocity_and_position(pi2, dt, a_c):
     p_r_new = p_current_r + p_velocity_new * dt
 
     return [p_r_new, p_velocity_new]
-    
-
-def update_state_PN(Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt): 
-
-    a_c = Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt)[0]
-
-    #print(f"k, a_c = {a_c}")
-
-    #print(np.linalg.norm(p_velocity_new))
-    
-    return ac_into_velocity_and_position(pi2, dt, a_c)
-
-
-def Aug_Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt):
-
-    a_c_PN, unit_perp_los2 = Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt)
-
-    t_vi1 = ti1[2:4]
-    t_vi2 = ti2[2:4]
-
-    t_a = (t_vi2 - t_vi1)/dt
-
-    t_a_perp = np.dot(unit_perp_los2, t_a)  #component perp to LOS
-
-    a_c_Aug = a_c_PN + N/2 * t_a_perp
-
-    return a_c_Aug
-
-def update_state_APN(Aug_Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt): 
-
-    a_c_Aug = Aug_Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt)
-
-    return ac_into_velocity_and_position(pi2, dt, a_c_Aug)
 
 # Target Trajectories
 def get_velocity(t_x, t_y, dt, target_velocity_mag): 
@@ -169,7 +134,6 @@ def straight_T_trajectory(x, x_start):
     t_vx, t_vy = get_velocity(x, t_y, dt, target_velocity_mag)
 
     return t_y, t_vx, t_vy
-
 
 def sin_T_trajectory(x, x_start):
 
@@ -203,10 +167,42 @@ def target_states_values(ti1, ti2, dt, x_range, trajectory):
 
     return x, y, vx, vy
 
+def update_state_PP(Pure_Pursuit_Guidance, pi2, ti2, dt):
+
+    p_current_r = pi2[0:2]    #current position of P
+    t_current_r = ti2[0:2]    #current position of T
+
+    p_current_v = pi2[2:4]    #current velocity of P
+
+    p_v_mag = np.linalg.norm(p_current_v)
+
+    new_direction = Pure_Pursuit_Guidance(t_current_r, p_current_r)
+
+    p_velocity_new = p_v_mag * new_direction  # amount in x & y that P needs to move
+
+    p_r_new = p_current_r + p_velocity_new * dt          # new coordinates of P
+
+    return [p_r_new, p_velocity_new]
+
+def update_state_PN(Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt): 
+
+    a_c = Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt)[0]
+
+    #print(f"k, a_c = {a_c}")
+
+    #print(np.linalg.norm(p_velocity_new))
+    
+    return ac_into_velocity_and_position(pi2, dt, a_c)
+
+def update_state_APN(Aug_Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt): 
+
+    a_c_Aug = Aug_Prop_Nav_Guidance(ti1, ti2, pi1, pi2, N, dt)
+
+    return ac_into_velocity_and_position(pi2, dt, a_c_Aug)
 
 def Main_loop(ti1, ti2, pi1, pi2, dt, x_range):
 
-    Gl = "APN"   # Define what guidance law I wanna use
+    Gl = "PP"   # Define what guidance law I wanna use
 
     # T trajectory
 
@@ -285,14 +281,3 @@ def Main_loop(ti1, ti2, pi1, pi2, dt, x_range):
     print(t_x[k-1])
 
 Main_loop(t0, t1, p0, p1, dt, x_range)
-
-
-
-#print (f"P x values{Main_loop(t0, t1, p0, p1, dt, x_range)[0]}")
-#print (f"P y values{Main_loop(t0, t1, p0, p1, dt, x_range)[1]}")
-
-# print(f"x values: {Main_loop(t0, t1, dt, x_range)[0]}")
-# print(f"y values: {Main_loop(t0, t1, dt, x_range)[1]}")    
-
-#print(f"from APN: {Aug_Prop_Nav_Guidance(t0,t1,p0,p1, N, dt)}")
-#print(f"from PN: {Prop_Nav_Guidance(t0,t1,p0,p1, N, dt)[0]}")
