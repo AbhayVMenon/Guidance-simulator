@@ -14,7 +14,7 @@ p1 = p0 + np.array([(dt * speed_multipier * target_velocity_mag), 0, 0, 0, 0, 0]
 
 # np.random.randint(-1000,1000)
 x_start = 1000
-x_range = 20000
+x_range = 10000
 x = np.arange(0,x_range,0.1)   #range of sim window
 
 #global constants
@@ -254,37 +254,6 @@ def Main_loop(pi1, pi2, dt, x_range):
             k_intercept = k
             break
 
-    #Plotting 
-
-    # fig = plt.figure()
-    # ax = fig.add_subplot(projection = "3d")
-
-
-
-    # myLabels = ["Target", "Pursuer"]
-    # ax.plot(t_x[0:(k)], t_y[0:(k)], t_z[0:(k)], color = "red", label = myLabels[0])
-    # ax.plot(p_x[0:k], p_y[0:k], p_z[0:k], color = "blue", label = myLabels[1])
-    # ax.set_xlabel("x displacment")
-    # ax.set_ylabel("y displacment")
-    # ax.set_zlabel("z displacment")
-    # ax.grid(False)
-    
-    # max_k = len(t_x) - 1
-    # max_k_x = len(t_x[0:(k-1)]) 
-    # mid = int(max_k / 2)
-    # mid_x = int(max_k_x / 2)
-    
-    # print(t_x[mid])
-
-    # #ax.quiver(t_x[mid_x], t_y[mid], t_z[mid], t_vx[mid], t_vy[mid], t_vz[mid], normalize = True, length = 100, color = "red")
-    
-    # print(t_x[k+1])    
-    
-
-
-    # plt.legend()
-    # plt.show()
-
     from matplotlib.animation import FuncAnimation
 
     fig = plt.figure()
@@ -317,7 +286,7 @@ def Main_loop(pi1, pi2, dt, x_range):
     if t_x[k+1] == x_range:
         print("Unsuccessful interception")
     else:
-        print(f"x displacment at intercept: {t_x[k+1]}")
+        print(f"x displacment at intercept: {t_x[k+1]}m")
 
     def update(frame):
         target_point.set_data([t_x[frame]], [t_y[frame]])
@@ -347,19 +316,8 @@ def Main_loop(pi1, pi2, dt, x_range):
 
         return target_point, pursuer_point, target_trail, pursuer_trail
 
-    ani = FuncAnimation(fig, update, frames=k, interval=0.01, blit=False)
+    ani = FuncAnimation(fig, update, frames=k, interval=0.01, blit=False, repeat = False)
 
-
-
-    
-    
     plt.show()
-
-    
-
-    # print(max_k)
-    # print(k + 1)
-
-    
 
 Main_loop(p0, p1, dt, x_range)
