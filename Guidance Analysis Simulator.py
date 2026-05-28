@@ -1,4 +1,4 @@
-import numpy as np, os, matplotlib.pyplot as plt, math as m, mpl_toolkits.mplot3d as Axes3D
+import numpy as np, os, matplotlib.pyplot as plt
 
 os.system("cls")
 
@@ -267,6 +267,9 @@ def Main_loop(pi1, pi2, dt, x_range):
     target_point, = ax.plot([], [], [], 'o', color="red", markersize=4, label="Target")
     pursuer_point, = ax.plot([], [], [], 'o', color="blue", markersize=4, label="Pursuer")
 
+    target_label = ax.text(t_x[0], t_y[0], t_z[0], "Target", color="red")
+    pursuer_label = ax.text(p_x[0], p_y[0], p_z[0], "Pursuer", color="blue")
+
     # animated trails that grow over time
     target_trail, = ax.plot([], [], [], color="red", linewidth=1.5)
     pursuer_trail, = ax.plot([], [], [], color="blue", linewidth=1.5)
@@ -301,6 +304,13 @@ def Main_loop(pi1, pi2, dt, x_range):
         pursuer_trail.set_data(p_x[0:frame], p_y[0:frame])
         pursuer_trail.set_3d_properties(p_z[0:frame])
 
+        # label moves with point
+        target_label.set_position((t_x[frame], t_y[frame]))
+        target_label.set_3d_properties(t_z[frame], zdir='y')
+
+        pursuer_label.set_position((p_x[frame], p_y[frame]))
+        pursuer_label.set_3d_properties(p_z[frame], zdir='y')
+
         if frame == k - 1:
             if t_x[k+1] != x_range:
                 ax.text2D(0.5, 0.5, "INTERCEPT", transform=ax.transAxes,
@@ -314,8 +324,8 @@ def Main_loop(pi1, pi2, dt, x_range):
                   ha="center", va="center",
                   bbox=dict(boxstyle="round", facecolor="red", alpha=0.8))
 
-        return target_point, pursuer_point, target_trail, pursuer_trail
-
+        return target_point, pursuer_point, target_trail, pursuer_trail, target_label, pursuer_label
+    
     ani = FuncAnimation(fig, update, frames=k, interval=0.01, blit=False, repeat = False)
 
     plt.show()
