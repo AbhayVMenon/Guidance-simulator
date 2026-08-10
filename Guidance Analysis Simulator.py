@@ -5,11 +5,11 @@ os.system("cls")
 #T = target, P = Pursuer
 
 dt = 0.01 # time step
-speed_multipier = 1.44 # How much faster P is than T
+speed_multipier = 1.7 # How much faster P is than T
 target_velocity_mag = 1000
 
 #Pursuer inital state vector
-p0 = np.array([0, 500, 0, (speed_multipier * target_velocity_mag), 0, 0])
+p0 = np.array([0, 500, 0, (speed_multipier * target_velocity_mag), 0, 0]) #[x0, y0, z0, xdot0, ydot0, zdot0]
 p1 = p0 + np.array([(dt * speed_multipier * target_velocity_mag), 0, 0, 0, 0, 0]) # @t = 0.01
 
 # np.random.randint(-1000,1000)
@@ -274,9 +274,9 @@ def Main_loop(pi1, pi2, dt, x_range):
     target_trail, = ax.plot([], [], [], color="red", linewidth=1.5)
     pursuer_trail, = ax.plot([], [], [], color="blue", linewidth=1.5)
 
-    ax.set_xlabel("x displacement")
-    ax.set_ylabel("y displacement")
-    ax.set_zlabel("z displacement")
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.set_zlabel("z")
 
     ax.set_xticklabels([])
     ax.set_yticklabels([])
@@ -287,7 +287,7 @@ def Main_loop(pi1, pi2, dt, x_range):
     plt.legend()
 
     if t_x[k+1] == x_range:
-        print("Unsuccessful interception")
+        print(f"Unsuccessful interception @ {target_velocity_mag * speed_multipier}m/s")
     else:
         print(f"x displacment at intercept: {t_x[k+1]}m")
 
