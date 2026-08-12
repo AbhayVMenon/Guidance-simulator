@@ -198,7 +198,7 @@ def update_state_APN(Aug_Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt):
 
 def Main_loop(pi1, pi2, dt, x_range):
 
-    Gl = "APN"   # Define what guidance law I wanna use
+    Gl = "APN"   # Define what guidance law User wants to use
 
     # T trajectory
 

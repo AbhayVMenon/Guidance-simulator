@@ -7,7 +7,7 @@ class State:
     r: np.ndarray #container for current pos (rx, ry, rz)
     v: np.ndarray #container for current vel (vx, vy, vz)
 
-class GuidanceLaws(ABC): 
+class GuidanceLaw(ABC): 
     def __init__(self):
         pass
 
@@ -18,7 +18,7 @@ class GuidanceLaws(ABC):
     def reset(self): #only use when a Gl defines something that others dont need
         pass
 
-class PurePursuit(GuidanceLaws): 
+class PurePursuit(GuidanceLaw): 
     def __init__(self, max_gs): 
         self.max_gs = max_gs
         self.max_accel = max_gs * 9.81
@@ -38,7 +38,7 @@ class PurePursuit(GuidanceLaws):
 
         return a_c
 
-class PropNav(GuidanceLaws): 
+class PropNav(GuidanceLaw): 
     def __init__(self, N): 
         self.N = N
         
@@ -69,7 +69,7 @@ class PropNav(GuidanceLaws):
         
             return a_c
 
-class AugPropNav(GuidanceLaws):
+class AugPropNav(GuidanceLaw):
     def __init__(self, N, dt):
         self.pn = PropNav(N)
         self.N = N
