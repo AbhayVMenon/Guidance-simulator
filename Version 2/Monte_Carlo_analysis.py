@@ -4,7 +4,7 @@ import numpy as np
 
 # inital configs
 law_names = ["PP", "PN", "APN"]
-e_values = np.linspace(0,500,11)
+e_values = np.linspace(0,30,11)
 n_trials = 10
 
 #pre-allocated arrays
@@ -42,4 +42,12 @@ mean_miss = miss_distance.mean(axis=2)
 hit_rate = hit.mean(axis=2)
 mean_time = np.nanmean(intercept_time, axis=2)
 
-print(f"mean miss distance [law, e]\n{mean_miss}\nhit rate [law, e]\n{hit_rate}\nmean intercept time [law, e]\n{mean_time}")
+
+print(f"x range = {x_range}")
+print(f"speed multiplier = {speed_multipier}")
+
+for i, name in enumerate(law_names):
+    print(f"\n--- {name} ---")
+    print(f"Miss distance per e: {mean_miss[i]}")
+    print(f"Hit rate per e:      {hit_rate[i]}")
+    print(f"Intercept time per e:{mean_time[i]}")

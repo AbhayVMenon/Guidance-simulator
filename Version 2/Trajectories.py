@@ -13,8 +13,8 @@ def get_velocity(t_x, t_y, t_z, dt, target_velocity_mag):
 
 def Helix(x, x_start, dt, target_velocity_mag):
 
-    A = 500
-    L = 3300
+    A = 89.46
+    L = 6000
 
     t_y = A * np.sin(2 * np.pi / L * (x - x_start))
     t_z = A * np.cos(2 * np.pi / L * (x - x_start))
