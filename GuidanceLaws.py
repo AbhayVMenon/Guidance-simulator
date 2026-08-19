@@ -39,8 +39,10 @@ class PurePursuit(GuidanceLaw):
         return a_c
 
 class PropNav(GuidanceLaw): 
-    def __init__(self, N): 
+    def __init__(self, N, max_gs): 
         self.N = N
+        self.max_gs = max_gs
+        self.max_accel = max_gs * 9.81
         
 
     def compute_command(self, p_state, t_state):
@@ -65,16 +67,24 @@ class PropNav(GuidanceLaw):
         
             perp_los2 = np.cross(los_rate, self.unit_los2)
         
-            a_c = self.N * Vc * perp_los2
-        
+            a_c_PN = self.N * Vc * perp_los2
+
+            if np.linalg.norm(a_c_PN) > self.max_accel:
+                direction_PN = a_c_PN / np.linalg.norm(a_c_PN)
+                a_c = direction_PN * self.max_accel
+            else:
+                a_c = a_c_PN
+
             return a_c
 
 class AugPropNav(GuidanceLaw):
-    def __init__(self, N, dt):
-        self.pn = PropNav(N)
+    def __init__(self, N, dt, max_gs):
+        self.pn = PropNav(N, max_gs)
         self.N = N
         self.dt = dt
         self.prev_t_vel = None
+        self.max_gs = max_gs
+        self.max_accel = max_gs * 9.81
 
     def compute_command(self, p_state, t_state): 
         a_c_PN = self.pn.compute_command(p_state, t_state)
@@ -96,7 +106,13 @@ class AugPropNav(GuidanceLaw):
 
         self.prev_t_vel = t_state.v
 
-        return a_c_APN
+        if np.linalg.norm(a_c_APN) > self.max_accel:
+            direction_APN = a_c_APN / np.linalg.norm(a_c_APN)
+            a_c = direction_APN * self.max_accel
+        else: 
+            a_c = a_c_APN
+
+        return a_c
 
     def reset(self):
         self.prev_t_vel = None

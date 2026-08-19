@@ -54,8 +54,8 @@ def run_trial(e=e, law_name=law_name, law_params = law_params): #runs the trial 
 
     #finding the law that user has chosen
     law_registry = {"PP": (PurePursuit, ["max_gs"]), 
-                    "PN": (PropNav, ["N"]),
-                    "APN":(AugPropNav, ["N", "dt"])}
+                    "PN": (PropNav, ["N", "max_gs"]),
+                    "APN":(AugPropNav, ["N", "dt", "max_gs"])}
 
     law_class, parameters = law_registry[law_name]
     law_kwargs = {k: law_params[k] for k in parameters}
@@ -102,10 +102,10 @@ def run_trial(e=e, law_name=law_name, law_params = law_params): #runs the trial 
 
     if intercept_index is None:
         intercept_index = len(p_x)
-        print("Unsuccessful interception")
+        #print("Unsuccessful interception")
     else:
         intercept_time = intercept_index * dt
-        print(f"Intercept occurs {intercept_time}s after launch")
+        #print(f"Intercept occurs {intercept_time}s after launch")
 
     stop = intercept_index + 1
 
