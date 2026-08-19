@@ -21,7 +21,8 @@ N = 3
 max_gs = 40
 kill_zone_size = 25 #effectuve size of missile
 p0 = np.array([0, 500, 0, (speed_multipier * target_velocity_mag), 0, 0]) #[x0, y0, z0, xdot0, ydot0, zdot0]
+e = 100 #error in which seeker will read target trajectory
 
 #Guidance law you want Pursuer to follow
 law_params = {"N": N, "dt": dt, "max_gs": max_gs} #edit only if a guidance law is being added!
-law_name = "APN"
+law_name = "PN"
