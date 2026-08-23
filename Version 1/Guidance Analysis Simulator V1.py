@@ -5,7 +5,7 @@ os.system("cls")
 #T = target, P = Pursuer
 
 dt = 0.01 # time step
-speed_multipier = 1.7 # How much faster P is than T
+speed_multipier = 1.44 # How much faster P is than T
 target_velocity_mag = 1000
 
 #Pursuer inital state vector
