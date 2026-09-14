@@ -198,11 +198,11 @@ def update_state_APN(Aug_Prop_Nav_Guidance,ti1, ti2, pi1, pi2, N, dt):
 
 def Main_loop(pi1, pi2, dt, x_range):
 
-    Gl = "APN"   # Define what guidance law User wants to use
+    Gl = "PP"   # Define what guidance law User wants to use
 
     # T trajectory
 
-    (t_x, t_y, t_z, t_vx, t_vy, t_vz) = target_states_values(dt, x_range, x_start, target_velocity_mag, Helix)
+    (t_x, t_y, t_z, t_vx, t_vy, t_vz) = target_states_values(dt, x_range, x_start, target_velocity_mag, Straight)
 
     # P trajectory
 
